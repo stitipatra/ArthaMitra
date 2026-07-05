@@ -1,0 +1,110 @@
+[
+  {
+    "customer_id": "C001",
+    "name": "Aarav Sharma",
+    "age": 25,
+    "city": "Bengaluru",
+    "occupation": "Software Engineer",
+    "life_stage": "young_professional",
+    "monthly_income": 85000,
+    "salary_history": [78000, 78000, 80000, 80000, 85000, 85000],
+    "monthly_expense_history": [56000, 54000, 52000, 50000, 53000, 52000],
+    "savings_balance": 280000,
+    "savings_balance_history": [190000, 205000, 225000, 245000, 260000, 280000],
+    "existing_sip": 5000,
+    "loan_emi": 0,
+    "credit_card_due": 12000,
+    "insurance_cover": 500000,
+    "risk_preference": "moderate",
+    "investment_goal": "wealth_creation",
+    "goal_amount": 2500000,
+    "goal_years": 7,
+    "recent_life_event": "salary_increment",
+    "transactions": {
+      "rent": 22000,
+      "groceries": 9000,
+      "dining": 8500,
+      "shopping": 6000,
+      "travel": 3500,
+      "utilities": 3000
+    },
+    "investments": {
+      "mutual_funds": 90000,
+      "fixed_deposits": 100000,
+      "stocks": 40000,
+      "gold": 25000
+    }
+  },
+  {
+    "customer_id": "C002",
+    "name": "Neha Iyer",
+    "age": 38,
+    "city": "Mumbai",
+    "occupation": "Marketing Manager",
+    "life_stage": "family_builder",
+    "monthly_income": 160000,
+    "salary_history": [145000, 145000, 150000, 150000, 160000, 160000],
+    "monthly_expense_history": [98000, 102000, 104000, 107000, 106000, 105000],
+    "savings_balance": 450000,
+    "savings_balance_history": [380000, 395000, 410000, 425000, 440000, 450000],
+    "existing_sip": 15000,
+    "loan_emi": 42000,
+    "credit_card_due": 28000,
+    "insurance_cover": 2000000,
+    "risk_preference": "conservative",
+    "investment_goal": "child_education",
+    "goal_amount": 4000000,
+    "goal_years": 10,
+    "recent_life_event": "child_school_admission",
+    "transactions": {
+      "rent": 45000,
+      "groceries": 18000,
+      "dining": 12000,
+      "shopping": 14000,
+      "travel": 8000,
+      "utilities": 8000
+    },
+    "investments": {
+      "mutual_funds": 300000,
+      "fixed_deposits": 600000,
+      "stocks": 50000,
+      "gold": 150000
+    }
+  },
+  {
+    "customer_id": "C003",
+    "name": "Rohan Mehta",
+    "age": 31,
+    "city": "Delhi",
+    "occupation": "Founder",
+    "life_stage": "high_income_entrepreneur",
+    "monthly_income": 220000,
+    "salary_history": [180000, 240000, 170000, 260000, 210000, 220000],
+    "monthly_expense_history": [155000, 168000, 172000, 180000, 178000, 175000],
+    "savings_balance": 900000,
+    "savings_balance_history": [820000, 850000, 780000, 840000, 875000, 900000],
+    "existing_sip": 8000,
+    "loan_emi": 18000,
+    "credit_card_due": 75000,
+    "insurance_cover": 1000000,
+    "risk_preference": "aggressive",
+    "investment_goal": "early_retirement",
+    "goal_amount": 10000000,
+    "goal_years": 15,
+    "recent_life_event": "business_income_volatility",
+    "transactions": {
+      "rent": 60000,
+      "groceries": 22000,
+      "dining": 35000,
+      "shopping": 28000,
+      "travel": 22000,
+      "utilities": 8000
+    },
+    "investments": {
+      "mutual_funds": 150000,
+      "fixed_deposits": 900000,
+      "stocks": 120000,
+      "gold": 100000
+    }
+  }
+]
