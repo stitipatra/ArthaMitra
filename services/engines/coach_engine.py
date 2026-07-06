@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from services.financial_twin import build_financial_twin
 from services.engines.report_engine import build_financial_report
 from services.engines.simulation_engine import simulate_event
-
+from services.engines.decision_engine import evaluate_purchase_decision
 
 ASSET_LIBRARY = {
     "house": {
@@ -212,6 +212,14 @@ INTENT_EXAMPLES = {
 }
 
 
+def assessment_reliability(decision_score):
+    if decision_score >= 80:
+        return "High"
+    if decision_score >= 60:
+        return "Medium"
+    return "Needs Review"
+
+
 def detect_intent(question):
     corpus = []
     labels = []
@@ -364,8 +372,7 @@ def answer_purchase_affordability(twin, report, asset, amount, confidence, chat_
             f"- Health Score: {twin['scores']['overall']}/100\n"
             f"- Emergency Fund: {metrics['emergency_months']} months\n"
             f"- Savings Rate: {metrics['savings_rate']}%\n"
-            f"- Debt-to-Income: {metrics['debt_to_income']}%\n"
-            f"- Intent confidence: {confidence}",
+            f"- Debt-to-Income: {metrics['debt_to_income']}%\n",
             chat_context
         )
 
@@ -429,6 +436,18 @@ def run_generic_purchase_simulation(twin, asset, amount):
         "recurring_cost": recurring_cost,
     }
 
+    decision = evaluate_purchase_decision(
+        base_twin=result["base_twin"],
+        simulated_twin=result["simulated_twin"],
+        asset=asset,
+        purchase_amount=amount,
+        down_payment=down_payment,
+        estimated_emi=estimated_emi,
+        recurring_cost=recurring_cost,
+    )
+
+    result["decision"] = decision
+
     return result
 
 
@@ -451,9 +470,12 @@ def format_purchase_answer(asset, amount, result, confidence):
         f"- Emergency Fund: {result['base_twin']['metrics']['emergency_months']} months → {sim['metrics']['emergency_months']} months\n"
         f"- Goal Status: {impact['goal_status_before']} → {impact['goal_status_after']}\n"
         f"- Stress Risk: {impact['stress_risk_before']} → {impact['stress_risk_after']}\n\n"
-        f"**Verdict:** {result['verdict']}\n"
-        f"Impact Level: {result['impact_level']}\n"
-        f"Intent confidence: {confidence}"
+        f"Decision Score: {result['decision']['overall_score']}/100\n"
+        f"**Verdict:** {result['decision']['verdict']}\n"
+        f"Impact Level: {result['decision']['impact_level']}\n"
+        f"Weakest Factor: {result['decision']['summary']['weakest_factor']}\n"
+        f"Recommended Action: {result['decision']['summary']['recommended_action']}\n"
+        f"Assessment Reliability: {assessment_reliability(result['decision']['overall_score'])}"
     )
 
 
@@ -467,7 +489,6 @@ def answer_sip_advice(twin, report, confidence):
         f"Current SIP gap: ₹{summary['sip_gap']:,}/month\n"
         f"Required SIP for goal: ₹{goal['required_sip_inflated']:,}/month\n"
         f"Primary focus: {report['executive_summary']['primary_focus']}\n"
-        f"Intent confidence: {confidence}"
     )
 
 
@@ -482,7 +503,6 @@ def answer_emergency_fund(twin, confidence):
         f"Recommended: {s['emergency_target_months']} months\n"
         f"Target amount: ₹{s['emergency_target_amount']:,}\n"
         f"Gap: ₹{gap:,}\n"
-        f"Intent confidence: {confidence}"
     )
 
 
@@ -493,7 +513,6 @@ def answer_insurance_gap(twin, confidence):
         f"**Insurance Gap Analysis**\n\n"
         f"Recommended cover: ₹{s['insurance_target']:,}\n"
         f"Current gap: ₹{s['insurance_gap']:,}\n"
-        f"Intent confidence: {confidence}"
     )
 
 
@@ -507,7 +526,6 @@ def answer_goal_readiness(report, confidence):
         f"Required SIP: ₹{g['required_sip_inflated']:,}/month\n"
         f"Goal gap: ₹{g['goal_gap']:,}\n"
         f"Status: {g['goal_status']}\n"
-        f"Intent confidence: {confidence}"
     )
 
 
@@ -525,7 +543,6 @@ def answer_portfolio_advice(twin, confidence):
         + "\n".join([f"- {asset.replace('_', ' ').title()}: {pct}%" for asset,
                     pct in allocation.items()])
         + f"\n\nPersona: {twin['persona']['type']}\n"
-        f"Intent confidence: {confidence}"
     )
 
 
@@ -544,7 +561,6 @@ def answer_loan_advice(twin, confidence):
         f"Debt-to-income ratio: {m['debt_to_income']}%\n"
         f"Current EMI: ₹{m['emi']:,}/month\n"
         f"{verdict}\n"
-        f"Intent confidence: {confidence}"
     )
 
 
@@ -559,7 +575,6 @@ def answer_tax_advice(twin, confidence):
         f"- HRA or home loan benefits if applicable\n"
         f"- Capital gains impact before large redemptions\n\n"
         f"This is a planning prompt, not tax filing advice.\n"
-        f"Intent confidence: {confidence}"
     )
 
 
@@ -569,7 +584,6 @@ def answer_life_event_help(twin, confidence):
         f"Detected event: {twin['life_events']['label']}\n"
         f"Recommended actions:\n"
         + "\n".join([f"- {action}" for action in twin["life_events"]["actions"]])
-        + f"\n\nIntent confidence: {confidence}"
     )
 
 
@@ -584,5 +598,4 @@ def answer_financial_summary(twin, report, confidence):
         f"Savings Rate: {s['savings_rate']}%\n"
         f"Stress Risk: {s['stress_risk']}\n\n"
         f"Primary focus: {s['primary_focus']}\n"
-        f"Intent confidence: {confidence}"
     )
