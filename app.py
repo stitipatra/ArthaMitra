@@ -11,7 +11,7 @@ from services.engines.simulation_engine import (
     EVENT_CONFIG
 )
 from services.engines.report_engine import build_financial_report, export_report_pdf
-from services.engines.coach_engine import answer_financial_question
+from services.engines.coach_engine import answer_with_context
 
 st.set_page_config(
     page_title="ArthaMitra",
@@ -405,6 +405,12 @@ elif mode == "🤖 AI Wealth Coach":
     st.title("🤖 AI Wealth Coach")
     st.caption("Ask questions grounded in the Financial Digital Twin.")
 
+    if "coach_messages" not in st.session_state:
+        st.session_state.coach_messages = []
+
+    if "coach_context" not in st.session_state:
+        st.session_state.coach_context = {}
+
     customer_names = [customer["name"] for customer in customers]
     selected_name = st.selectbox("Select Customer", customer_names)
     coach_customer = next(c for c in customers if c["name"] == selected_name)
@@ -412,17 +418,45 @@ elif mode == "🤖 AI Wealth Coach":
     coach_twin = build_financial_twin(coach_customer)
     coach_report = build_financial_report(coach_twin)
 
-    st.metric("Health Score", f"{coach_twin['scores']['overall']}/100")
-    st.info(f"Persona: {coach_twin['persona']['type']}")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Health Score", f"{coach_twin['scores']['overall']}/100")
+    col2.metric("Persona", coach_twin["persona"]["type"])
+    col3.metric("Goal Status", coach_twin["predictions"]["goal_status"])
 
-    question = st.text_input(
-        "Ask ArthaMitra",
-        "Can I buy a car?"
-    )
+    st.markdown("### Conversation")
 
-    if st.button("Ask Coach"):
-        answer = answer_financial_question(question, coach_twin, coach_report)
-        st.chat_message("assistant").write(answer)
+    for msg in st.session_state.coach_messages:
+        st.chat_message(msg["role"]).write(msg["content"])
+
+    question = st.chat_input(
+        "Ask ArthaMitra something like: Can I buy a 15 lakh car?")
+
+    if question:
+        st.session_state.coach_messages.append({
+            "role": "user",
+            "content": question
+        })
+
+        answer, updated_context = answer_with_context(
+            question,
+            coach_twin,
+            coach_report,
+            st.session_state.coach_context
+        )
+
+        st.session_state.coach_context = updated_context
+
+        st.session_state.coach_messages.append({
+            "role": "assistant",
+            "content": answer
+        })
+
+        st.rerun()
+
+    if st.button("Clear Coach Conversation"):
+        st.session_state.coach_messages = []
+        st.session_state.coach_context = {}
+        st.rerun()
 
     st.stop()
 
