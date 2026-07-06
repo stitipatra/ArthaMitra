@@ -10,6 +10,8 @@ from services.engines.simulation_engine import (
     simulate_scenario_timeline,
     EVENT_CONFIG
 )
+from services.engines.report_engine import build_financial_report, export_report_pdf
+from services.engines.coach_engine import answer_financial_question
 
 st.set_page_config(
     page_title="ArthaMitra",
@@ -315,12 +317,113 @@ elif mode == "⚡ Quick Assessment":
 
 elif mode == "📄 AI Wealth Report":
     st.title("📄 AI Wealth Report")
-    st.info("PDF report generation will be added next. Elite access is working.")
+    st.caption(
+        "Structured financial intelligence generated from the Financial Digital Twin.")
+
+    customer_names = [customer["name"] for customer in customers]
+    selected_name = st.selectbox("Select Customer for Report", customer_names)
+    report_customer = next(c for c in customers if c["name"] == selected_name)
+
+    report_twin = build_financial_twin(report_customer)
+
+    report = build_financial_report(report_twin)
+
+    st.subheader("Executive Summary")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric(
+        "Health Score",
+        f"{report['executive_summary']['health_score']}/100",
+        report["executive_summary"]["health_label"]
+    )
+
+    col2.metric(
+        "Goal Status",
+        report["executive_summary"]["goal_status"]
+    )
+
+    col3.metric(
+        "Stress Risk",
+        report["executive_summary"]["stress_risk"]
+    )
+
+    st.info(
+        f"**Primary Focus:** {report['executive_summary']['primary_focus']}")
+
+    st.subheader("Financial DNA")
+
+    dna_df = pd.DataFrame({
+        "Dimension": report["financial_dna"].keys(),
+        "Score": report["financial_dna"].values()
+    })
+
+    fig = px.bar(dna_df, x="Dimension", y="Score",
+                 text="Score", range_y=[0, 100])
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Goal Analysis")
+
+    goal = report["goal_analysis"]
+
+    st.write(
+        f"Goal: **{goal['goal'].replace('_', ' ').title()}**"
+    )
+
+    g1, g2, g3 = st.columns(3)
+
+    g1.metric("Today's Goal Value", format_currency(goal["today_value"]))
+    g2.metric("Inflation Adjusted Value", format_currency(
+        goal["inflation_adjusted_value"]))
+    g3.metric("Goal Gap", format_currency(goal["goal_gap"]))
+
+    st.write(
+        f"Required SIP for inflation-adjusted goal: "
+        f"**{format_currency(goal['required_sip_inflated'])}/month**"
+    )
+
+    st.subheader("Recommendations")
+
+    for rec in report["recommendations"]:
+        st.success(
+            f"**{rec['title']}**\n\n"
+            f"{rec['detail']}\n\n"
+            f"Impact: {rec['impact']}\n\n"
+            f"Confidence: {rec['confidence']}%"
+        )
+
+    st.subheader("90-Day Action Plan")
+
+    for phase, actions in report["action_plan"].items():
+        st.markdown(f"### {phase.replace('_', ' ').title()}")
+        for action in actions:
+            st.write(f"- {action}")
+
     st.stop()
 
 elif mode == "🤖 AI Wealth Coach":
     st.title("🤖 AI Wealth Coach")
-    st.info("Interactive coach will be added next. Elite access is working.")
+    st.caption("Ask questions grounded in the Financial Digital Twin.")
+
+    customer_names = [customer["name"] for customer in customers]
+    selected_name = st.selectbox("Select Customer", customer_names)
+    coach_customer = next(c for c in customers if c["name"] == selected_name)
+
+    coach_twin = build_financial_twin(coach_customer)
+    coach_report = build_financial_report(coach_twin)
+
+    st.metric("Health Score", f"{coach_twin['scores']['overall']}/100")
+    st.info(f"Persona: {coach_twin['persona']['type']}")
+
+    question = st.text_input(
+        "Ask ArthaMitra",
+        "Can I buy a car?"
+    )
+
+    if st.button("Ask Coach"):
+        answer = answer_financial_question(question, coach_twin, coach_report)
+        st.chat_message("assistant").write(answer)
+
     st.stop()
 
 
@@ -333,6 +436,7 @@ overall_score = twin["scores"]["overall"]
 health_label = twin["scores"]["label"]
 risk_profile = twin["persona"]["type"]
 recommendation_summary = twin["recommendation_summary"]
+current_report = build_financial_report(twin)
 
 
 st.sidebar.markdown("### Customer Profile")
@@ -868,3 +972,55 @@ Confidence: **{top_recommendation['confidence']}%**
 """
 
 st.chat_message("assistant").write(advisor_response)
+
+
+st.divider()
+
+st.subheader("Generate Financial Report")
+st.caption(
+    "Generate a structured report from the currently active Financial Digital Twin.")
+
+if st.button("Generate Current Twin Report", key="generate_current_twin_report"):
+    report = build_financial_report(twin)
+
+    st.success("Financial report generated from current Financial Digital Twin.")
+
+    st.markdown("### Executive Summary")
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric(
+        "Health Score",
+        f"{report['executive_summary']['health_score']}/100",
+        report["executive_summary"]["health_label"]
+    )
+
+    c2.metric(
+        "Goal Status",
+        report["executive_summary"]["goal_status"]
+    )
+
+    c3.metric(
+        "Stress Risk",
+        report["executive_summary"]["stress_risk"]
+    )
+
+    st.info(
+        f"**Primary Focus:** {report['executive_summary']['primary_focus']}")
+
+    st.markdown("### Action Plan")
+
+    for phase, actions in report["action_plan"].items():
+        st.markdown(f"**{phase.replace('_', ' ').title()}**")
+        for action in actions:
+            st.write(f"- {action}")
+
+        pdf_path = export_report_pdf(report)
+
+    with open(pdf_path, "rb") as file:
+        st.download_button(
+            label="Download Financial Report PDF",
+            data=file,
+            file_name=pdf_path.split("\\")[-1],
+            mime="application/pdf"
+        )
