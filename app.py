@@ -492,8 +492,12 @@ elif mode == "🤖 AI Wealth Coach":
             current_chat["context"]
         )
 
-        answer = explain_answer(
-            question, answer, coach_twin["customer"]["name"])
+        with st.spinner("🧠 ArthaMitra AI is analyzing your financial decision..."):
+            answer = explain_answer(
+                question,
+                answer,
+                coach_customer["name"]
+            )
 
         current_chat["context"] = updated_context
 
