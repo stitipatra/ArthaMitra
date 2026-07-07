@@ -105,12 +105,32 @@ def simulate_scenario_timeline(customer, events):
             "step": index,
             "event_type": event["event_type"],
             "event_label": EVENT_CONFIG[event["event_type"]]["label"],
+
             "before_score": before_twin["scores"]["overall"],
             "after_score": after_twin["scores"]["overall"],
             "score_change": after_twin["scores"]["overall"] - before_twin["scores"]["overall"],
+
+            "before_net_worth": before_twin["metrics"]["net_worth"],
+            "after_net_worth": after_twin["metrics"]["net_worth"],
             "net_worth_change": after_twin["metrics"]["net_worth"] - before_twin["metrics"]["net_worth"],
-            "emergency_months": after_twin["metrics"]["emergency_months"],
-            "goal_status": after_twin["predictions"]["goal_status"]
+
+            "before_emergency_months": before_twin["metrics"]["emergency_months"],
+            "after_emergency_months": after_twin["metrics"]["emergency_months"],
+            "emergency_months_change": round(
+                after_twin["metrics"]["emergency_months"] -
+                before_twin["metrics"]["emergency_months"],
+                1
+            ),
+
+            "before_goal_gap": before_twin["predictions"]["goal_gap"],
+            "after_goal_gap": after_twin["predictions"]["goal_gap"],
+            "goal_gap_change": after_twin["predictions"]["goal_gap"] - before_twin["predictions"]["goal_gap"],
+
+            "before_goal_status": before_twin["predictions"]["goal_status"],
+            "after_goal_status": after_twin["predictions"]["goal_status"],
+
+            "before_stress_risk": before_twin["predictions"]["financial_stress_risk"],
+            "after_stress_risk": after_twin["predictions"]["financial_stress_risk"],
         })
 
     final_twin = build_financial_twin(current_customer)
