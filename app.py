@@ -633,14 +633,24 @@ fig = px.bar(score_df, x="Component", y="Score",
 st.plotly_chart(fig, use_container_width=True)
 
 
-st.subheader("Financial DNA")
+st.subheader("Financial Health Radar")
 
-dna_df = pd.DataFrame({
-    "Dimension": financial_dna.keys(),
-    "Score": financial_dna.values()
+radar_df = pd.DataFrame({
+    "Dimension": list(financial_dna.keys()),
+    "Score": list(financial_dna.values())
 })
 
-fig = px.bar(dna_df, x="Dimension", y="Score", text="Score", range_y=[0, 100])
+fig = px.line_polar(
+    radar_df,
+    r="Score",
+    theta="Dimension",
+    line_close=True,
+    range_r=[0, 100],
+    title="Financial Twin Strength Map"
+)
+
+fig.update_traces(fill="toself")
+
 st.plotly_chart(fig, use_container_width=True)
 
 

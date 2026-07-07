@@ -220,6 +220,35 @@ def assessment_reliability(decision_score):
     return "Needs Review"
 
 
+def format_decision_explainability(decision):
+    summary = decision["summary"]
+    component_scores = decision["component_scores"]
+
+    strongest_key = summary["strongest_factor"].lower().replace(" ", "_")
+    weakest_key = summary["weakest_factor"].lower().replace(" ", "_")
+
+    strongest = component_scores.get(strongest_key)
+    weakest = component_scores.get(weakest_key)
+
+    strongest_reason = strongest["reasons"][0] if strongest else "Strong supporting factor detected."
+    weakest_reason = weakest["reasons"][0] if weakest else summary["main_reason"]
+
+    weakest_improvement = (
+        weakest["improvements"][0]
+        if weakest and weakest["improvements"]
+        else summary["recommended_action"]
+    )
+
+    return (
+        f"\n\n**Why this score?**\n\n"
+        f"✅ Strongest factor: **{summary['strongest_factor']}**\n"
+        f"- {strongest_reason}\n\n"
+        f"⚠️ Weakest factor: **{summary['weakest_factor']}**\n"
+        f"- {weakest_reason}\n\n"
+        f"**Recommended next step:** {weakest_improvement}"
+    )
+
+
 def detect_intent(question):
     corpus = []
     labels = []
@@ -473,9 +502,8 @@ def format_purchase_answer(asset, amount, result, confidence):
         f"Decision Score: {result['decision']['overall_score']}/100\n"
         f"**Verdict:** {result['decision']['verdict']}\n"
         f"Impact Level: {result['decision']['impact_level']}\n"
-        f"Weakest Factor: {result['decision']['summary']['weakest_factor']}\n"
-        f"Recommended Action: {result['decision']['summary']['recommended_action']}\n"
         f"Assessment Reliability: {assessment_reliability(result['decision']['overall_score'])}"
+        + format_decision_explainability(result["decision"])
     )
 
 

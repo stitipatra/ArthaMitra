@@ -195,10 +195,22 @@ def score_affordability(base_metrics, sim_metrics, estimated_emi, recurring_cost
 
     improvements = []
     if commitment_ratio > 30:
+        target_commitment = income * 0.30
+        excess_commitment = monthly_commitment - target_commitment
+
         improvements.append(
-            "Increase down payment or choose a lower-cost option.")
+            f"Reduce EMI/recurring obligations by approximately "
+            f"₹{excess_commitment:,.0f}/month to keep new commitments below "
+            "30% of income."
+        )
     if disposable_ratio < 20:
-        improvements.append("Preserve monthly cash flow before committing.")
+        target_disposable = income * 0.20
+        cashflow_gap = target_disposable - disposable_after
+
+        improvements.append(
+            f"Improve monthly cash flow by approximately ₹{cashflow_gap:,.0f} "
+            "before committing to this decision."
+        )
 
     return {
         "score": round(clamp(score)),
@@ -237,10 +249,25 @@ def score_liquidity(base_twin, simulated_twin, down_payment):
 
     improvements = []
     if emergency_after < target_months:
-        improvements.append("Build emergency fund before proceeding.")
-    if down_payment > base_metrics["savings"] * 0.5:
+        monthly_expense = sim_metrics["expenses"]
+
+        additional_buffer = (
+            (target_months - emergency_after)
+            * monthly_expense
+        )
+
         improvements.append(
-            "Avoid using more than half of liquid savings upfront.")
+            f"Build an additional ₹{additional_buffer:,.0f} emergency fund "
+            f"to reach the recommended {target_months}-month safety buffer."
+        )
+    if down_payment > base_metrics["savings"] * 0.5:
+        safe_down_payment = base_metrics["savings"] * 0.5
+
+        improvements.append(
+            f"Limit the upfront payment to approximately "
+            f"₹{safe_down_payment:,.0f} "
+            "to preserve adequate liquidity."
+        )
 
     return {
         "score": round(clamp(score)),
@@ -269,7 +296,16 @@ def score_debt(sim_metrics):
 
     improvements = []
     if dti > 35:
-        improvements.append("Reduce EMI burden below 35% of income.")
+        income = sim_metrics["income"]
+        current_emi = sim_metrics["emi"]
+
+        target_emi = income * 0.35
+        excess_emi = max(0, current_emi - target_emi)
+
+        improvements.append(
+            f"Reduce monthly EMI burden by approximately ₹{excess_emi:,.0f} "
+            "to keep debt-to-income below 35%."
+        )
     else:
         improvements.append("Debt level remains within a manageable range.")
 
@@ -309,8 +345,12 @@ def score_goal_impact(base_predictions, sim_predictions):
 
     improvements = []
     if additional_gap > 0:
+        estimated_monthly_sip_gap = additional_gap / 60
+
         improvements.append(
-            "Increase SIP or delay the purchase to protect long-term goals.")
+            f"Increase SIP by approximately ₹{estimated_monthly_sip_gap:,.0f}/month "
+            "for the next 5 years, or delay the purchase to protect long-term goals."
+        )
     else:
         improvements.append("Goal impact appears limited.")
 
@@ -346,10 +386,25 @@ def score_stability(base_twin, simulated_twin):
 
     improvements = []
     if sim_predictions["financial_stress_risk"] != "Low":
-        improvements.append("Reduce fixed obligations before proceeding.")
-    if sim_metrics["insurance_adequacy"] < 5:
+        monthly_expenses = sim_metrics["expenses"]
+        suggested_reduction = monthly_expenses * 0.10
+
         improvements.append(
-            "Improve protection cover for financial stability.")
+            f"Reduce fixed monthly obligations by approximately ₹{suggested_reduction:,.0f} "
+            "or increase emergency savings before proceeding."
+        )
+    if sim_metrics["insurance_adequacy"] < 5:
+        annual_income = sim_metrics["income"] * 12
+        recommended_cover = annual_income * 10
+        # current_cover = sim_metrics["insurance_cover"] if "insurance_cover" in sim_metrics else annual_income * \
+        #    sim_metrics["insurance_adequacy"]
+        current_cover = annual_income * sim_metrics["insurance_adequacy"]
+        insurance_gap = max(0, recommended_cover - current_cover)
+
+        improvements.append(
+            f"Increase insurance cover by approximately ₹{insurance_gap:,.0f} "
+            "to improve long-term financial stability."
+        )
 
     return {
         "score": round(clamp(score)),
