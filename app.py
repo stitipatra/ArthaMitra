@@ -12,6 +12,8 @@ from services.engines.simulation_engine import (
 )
 from services.engines.report_engine import build_financial_report, export_report_pdf
 from services.engines.coach_engine import answer_with_context
+from services.gemini_service import explain_answer
+
 
 st.set_page_config(
     page_title="ArthaMitra",
@@ -489,6 +491,9 @@ elif mode == "🤖 AI Wealth Coach":
             coach_report,
             current_chat["context"]
         )
+
+        answer = explain_answer(
+            question, answer, coach_twin["customer"]["name"])
 
         current_chat["context"] = updated_context
 
