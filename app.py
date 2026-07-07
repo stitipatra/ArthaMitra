@@ -980,6 +980,8 @@ with tab2:
         final_twin = scenario_result["final_twin"]
         total_impact = scenario_result["total_impact"]
 
+        timeline_df = pd.DataFrame(scenario_result["timeline"])
+
         st.markdown("### Cumulative Scenario Impact")
 
         c1, c2, c3, c4 = st.columns(4)
@@ -995,11 +997,51 @@ with tab2:
 
         st.markdown("### Financial Journey Timeline")
 
+        event_icons = {
+            "car_purchase": "🚗",
+            "home_purchase": "🏠",
+            "friend_financial_help": "🤝",
+            "hospitalization": "🏥",
+            "salary_increment": "📈",
+            "job_loss": "⚠️",
+            "market_crash": "📉",
+            "vacation": "✈️",
+            "child_birth": "👶",
+            "natural_disaster": "🌪️",
+        }
+
         for step in scenario_result["timeline"]:
+            icon = event_icons.get(step["event_type"], "📌")
+
             with st.container(border=True):
                 st.markdown(
-                    f"### Step {step['step']}: {step['event_label']}"
+                    f"### {icon} Step {step['step']}: {step['event_label']}"
                 )
+
+                event_col1, event_col2, event_col3, event_col4 = st.columns(4)
+
+                event_col1.metric(
+                    "One-time Impact",
+                    format_currency(step["one_time_amount"])
+                )
+
+                event_col2.metric(
+                    "EMI / Income Change",
+                    format_currency(step["monthly_emi"]
+                                    or step["income_change"])
+                )
+
+                event_col3.metric(
+                    "Recurring Expense",
+                    format_currency(step["recurring_expense"])
+                )
+
+                event_col4.metric(
+                    "Market Shock",
+                    f"{step['market_fall_percent']}%"
+                )
+
+                st.markdown("#### Before → After")
 
                 c1, c2, c3, c4 = st.columns(4)
 
@@ -1036,6 +1078,94 @@ with tab2:
                 s2.warning(
                     f"Stress Risk: **{step['before_stress_risk']} → {step['after_stress_risk']}**"
                 )
+
+                st.markdown("#### ArthaMitra Insight")
+
+                if step["score_change"] < -10:
+                    st.error(
+                        "This event creates a major negative impact on the Financial Digital Twin. "
+                        "Consider delaying it, reducing the amount, or improving income/liquidity first."
+                    )
+                elif step["score_change"] < 0:
+                    st.warning(
+                        "This event has a moderate negative impact. It may still be manageable, "
+                        "but should be planned carefully."
+                    )
+                elif step["score_change"] > 0:
+                    st.success(
+                        "This event improves the Financial Digital Twin. It strengthens future financial capacity."
+                    )
+                else:
+                    st.info(
+                        "This event has limited impact on the overall Financial Digital Twin."
+                    )
+
+        st.markdown("### Timeline Intelligence")
+
+        worst_step = min(
+            scenario_result["timeline"],
+            key=lambda step: step["score_change"]
+        )
+
+        best_step = max(
+            scenario_result["timeline"],
+            key=lambda step: step["score_change"]
+        )
+
+        i1, i2 = st.columns(2)
+
+        with i1:
+            st.error(
+                f"**Highest Risk Event:** {worst_step['event_label']}\n\n"
+                f"Health Score Impact: {worst_step['score_change']}\n\n"
+                f"Emergency Fund Impact: {worst_step['emergency_months_change']} months"
+            )
+
+        with i2:
+            st.success(
+                f"**Most Positive Event:** {best_step['event_label']}\n\n"
+                f"Health Score Impact: {best_step['score_change']}\n\n"
+                f"Emergency Fund Impact: {best_step['emergency_months_change']} months"
+            )
+        st.markdown("### Timeline Summary")
+
+        summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
+
+        summary_col1.metric(
+            "Health Score",
+            f"{base_twin['scores']['overall']} → {final_twin['scores']['overall']}",
+            total_impact["health_score_change"]
+        )
+
+        summary_col2.metric(
+            "Net Worth Change",
+            format_currency(total_impact["net_worth_change"])
+        )
+
+        summary_col3.metric(
+            "Emergency Fund Change",
+            f"{total_impact['emergency_months_change']} months"
+        )
+
+        summary_col4.metric(
+            "Goal Gap Change",
+            format_currency(total_impact["goal_gap_change"])
+        )
+
+        if total_impact["health_score_change"] < -15:
+            st.error(
+                "Overall, this scenario significantly weakens the customer's financial position. "
+                "ArthaMitra recommends reordering the timeline or delaying the highest-impact event."
+            )
+        elif total_impact["health_score_change"] < 0:
+            st.warning(
+                "Overall, this scenario creates some pressure, but may be manageable with planning. "
+                "Focus on rebuilding liquidity and protecting long-term goals."
+            )
+        else:
+            st.success(
+                "Overall, this scenario improves or preserves the customer's financial position."
+            )
 
         fig = px.line(
             timeline_df,

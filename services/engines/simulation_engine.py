@@ -106,6 +106,12 @@ def simulate_scenario_timeline(customer, events):
             "event_type": event["event_type"],
             "event_label": EVENT_CONFIG[event["event_type"]]["label"],
 
+            "one_time_amount": event.get("one_time_amount", 0),
+            "monthly_emi": event.get("monthly_emi", 0),
+            "income_change": event.get("income_change", 0),
+            "recurring_expense": event.get("recurring_expense", 0),
+            "market_fall_percent": event.get("market_fall_percent", 25),
+
             "before_score": before_twin["scores"]["overall"],
             "after_score": after_twin["scores"]["overall"],
             "score_change": after_twin["scores"]["overall"] - before_twin["scores"]["overall"],
