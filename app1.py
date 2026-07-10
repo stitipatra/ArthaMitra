@@ -164,6 +164,7 @@ if mode in elite_locked_pages and not st.session_state.elite_unlocked:
 
 def estimate_quick_profile(
     name,
+    gender,
     age,
     city,
     occupation,
@@ -206,6 +207,7 @@ def estimate_quick_profile(
     return {
         "customer_id": f"QUICK_{name}_{age}_{monthly_income}_{savings_balance}_{goal_amount}",
         "name": name,
+        "gender": gender.lower(),
         "age": age,
         "city": city,
         "occupation": occupation,
@@ -323,6 +325,7 @@ elif mode == "⚡ Quick Assessment":
     st.sidebar.markdown("### Quick Financial Assessment")
 
     name = st.sidebar.text_input("Name", "Demo User")
+    gender = st.sidebar.selectbox("Gender", ["Male", "Female"])
     age = st.sidebar.number_input("Age", 18, 70, 26)
 
     city = st.sidebar.selectbox(
@@ -418,6 +421,7 @@ elif mode == "⚡ Quick Assessment":
 
     customer = estimate_quick_profile(
         name,
+        gender,
         age,
         city,
         occupation,
@@ -676,28 +680,15 @@ st.caption("A quick view of who this customer is, what their goal is, and how th
 
 goal_name = customer["investment_goal"].replace("_", " ").title()
 
+customer_gender = customer.get("gender", "male").lower()
+avatar_path = (
+    "assets/fe_images.jfif") if customer_gender == "female" else ("assets/images.jfif")
+
 with st.container(border=True):
     profile_avatar, profile_details = st.columns([1, 8])
 
     with profile_avatar:
-        st.markdown(
-            """
-            <div style="
-                width:82px;
-                height:82px;
-                border-radius:50%;
-                background:#EAF3FF;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                font-size:40px;
-                margin-top:8px;
-            ">
-                👨‍💼
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.image(avatar_path, width=92)
 
     with profile_details:
         st.markdown(f"## {customer['name']}")
@@ -825,17 +816,27 @@ components = twin["scores"]["components"]
 strongest = max(components, key=components.get)
 weakest = min(components, key=components.get)
 
-st.info(
-    f"""
-### Executive Summary
+with st.container(border=True):
 
-✅ **Strongest Area:** {strongest}
+    st.subheader("📋 Financial Summary")
 
-⚠️ **Needs Most Attention:** {weakest}
+    s1, s2, s3 = st.columns(3)
 
-Overall, your financial health is **{health_label}** with a score of **{overall_score}/100**.
-"""
-)
+    s1.metric(
+        "Overall Health",
+        f"{overall_score}/100",
+        health_label
+    )
+
+    s2.metric(
+        "Strongest Area",
+        strongest
+    )
+
+    s3.metric(
+        "Greatest Opportunity",
+        weakest
+    )
 
 st.divider()
 
@@ -884,29 +885,67 @@ st.divider()
 col_a, col_b = st.columns(2)
 
 with col_a:
-    st.subheader("Behaviour & Life Event Insights")
-
-    for signal in twin["behaviour"]["signals"]:
-        st.info(f"**Behaviour Signal:** {signal}")
-
-    st.warning(
-        f"**Life Event:** {twin['life_events']['label']} "
-        f"({twin['life_events']['severity']} severity)"
+    st.subheader("🧠 Financial Behaviour & Life Events")
+    st.caption(
+        "Patterns identified from spending behaviour, savings habits and recent life events."
     )
 
+    st.markdown("#### Financial Behaviour")
+
+    for signal in twin["behaviour"]["signals"]:
+        st.success(f"✓ {signal}")
+
+    st.markdown("#### Recent Life Event")
+
+    st.info(
+        f"**{twin['life_events']['label']}**\n\n"
+        f"Severity: {twin['life_events']['severity'].title()}"
+    )
+
+    st.markdown("#### Why this matters")
+
     for action in twin["life_events"]["actions"]:
-        st.info(f"Recommended action: {action}")
+        st.write(f"• {action}")
 
 with col_b:
-    st.subheader("Personalized Recommendations")
+    st.subheader("✅ Recommended Next Steps")
+    st.caption(
+        "Actions selected from the customer's financial profile, behaviour, "
+        "life events, and goal progress."
+    )
 
-    for rec in twin["recommendations"]:
-        st.success(
-            f"**{rec['title']}**\n\n"
-            f"{rec['detail']}\n\n"
-            f"Impact: {rec['impact']}\n\n"
-            f"Confidence: {rec['confidence']}%"
-        )
+    for index, rec in enumerate(twin["recommendations"]):
+        impact = str(rec.get("impact", "Medium")).title()
+        confidence = rec.get("confidence", "N/A")
+
+        impact_icon = {
+            "High": "🟢",
+            "Medium": "🟡",
+            "Low": "🔵"
+        }.get(impact, "🟡")
+
+        with st.container(border=True):
+            title_col, impact_col = st.columns([3, 1])
+
+            with title_col:
+                st.markdown(f"#### {rec['title']}")
+
+            with impact_col:
+                st.markdown(
+                    f"**{impact_icon} {impact} Impact**"
+                )
+
+            st.write(rec["detail"])
+
+            st.divider()
+
+            footer_left, footer_right = st.columns([3, 1])
+
+            with footer_left:
+                st.caption("Recommendation confidence")
+
+            with footer_right:
+                st.markdown(f"**{confidence}%**")
 
 
 st.divider()
@@ -942,25 +981,74 @@ status_icon = (
 
 with left2:
     st.subheader("📊 Current Investment Portfolio")
-    st.caption("Your current asset allocation across investment categories.")
+    st.caption(
+        "How the customer's current investments are distributed across asset classes."
+    )
 
     portfolio_df = pd.DataFrame({
-        "Asset": customer["investments"].keys(),
-        "Amount": customer["investments"].values()
+        "Asset": [
+            asset.replace("_", " ").title()
+            for asset in customer["investments"].keys()
+        ],
+        "Amount": list(customer["investments"].values())
     })
+
+    total_investments = portfolio_df["Amount"].sum()
+
+    portfolio_df["Allocation"] = portfolio_df["Amount"].apply(
+        lambda amount: round(
+            (amount / total_investments) * 100, 1
+        ) if total_investments else 0
+    )
+
+    st.markdown(
+        f"""
+        <div class="mini-card" style="height:auto; min-height:105px; margin-bottom:12px;">
+            <div class="metric-label">Total Investments</div>
+            <div class="metric-value">{format_currency(total_investments)}</div>
+            <div style="font-size:13px; color:#64748B; margin-top:6px;">
+                Current market value across all investment categories
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     fig = px.pie(
         portfolio_df,
         names="Asset",
         values="Amount",
-        hole=0.45
+        hole=0.52
     )
+
+    fig.update_traces(
+        textposition="inside",
+        textinfo="percent+label",
+        hovertemplate=(
+            "<b>%{label}</b><br>"
+            "Value: ₹%{value:,.0f}<br>"
+            "Allocation: %{percent}<extra></extra>"
+        )
+    )
+
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=20, b=10),
+        showlegend=False
+    )
+
     st.plotly_chart(fig, use_container_width=True)
 
-    st.metric(
-        "Total Investments",
-        format_currency(features["investments"])
-    )
+    st.markdown("#### Asset Allocation")
+
+    for _, row in portfolio_df.sort_values(
+        "Amount",
+        ascending=False
+    ).iterrows():
+        asset_col, value_col, allocation_col = st.columns([2.2, 1.5, 1])
+
+        asset_col.write(f"**{row['Asset']}**")
+        value_col.write(format_currency(row["Amount"]))
+        allocation_col.write(f"{row['Allocation']}%")
 
 with right2:
     title_col, assumption_col = st.columns([3, 2])
@@ -1019,6 +1107,28 @@ with right2:
 
         This goal comes from the selected customer profile or the Quick Assessment form.
         """
+    )
+
+    st.info(
+        f"""
+    ### How is this projection calculated?
+
+    This customer's financial goal is **{goal_name}**.
+
+    The projection combines:
+
+    • Current savings
+
+    • Existing investments
+
+    • Monthly SIP investments
+
+    • Expected annual returns
+
+    • Inflation-adjusted future cost
+
+    to estimate future financial progress.
+    """
     )
 
     a, b = st.columns(2)
@@ -1572,7 +1682,7 @@ with tab2:
 
 st.divider()
 
-st.subheader("ArthaMitra Advisor")
+st.subheader("AI Financial Advisor")
 
 top_recommendation = twin["recommendations"][0] if twin["recommendations"] else None
 
@@ -1605,7 +1715,7 @@ st.divider()
 
 st.subheader("Generate Financial Report")
 st.caption(
-    "Generate a structured report from the currently active Financial Digital Twin.")
+    "Generate a professional wealth report from the currently active Financial Digital Twin.")
 
 if st.button("Generate Current Twin Report", key="generate_current_twin_report"):
     report = build_financial_report(twin)

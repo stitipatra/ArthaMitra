@@ -2,6 +2,7 @@
   {
     "customer_id": "C001",
     "name": "Aarav Sharma",
+    "gender": "male",
     "age": 25,
     "city": "Bengaluru",
     "occupation": "Software Engineer",
@@ -38,6 +39,7 @@
   {
     "customer_id": "C002",
     "name": "Neha Iyer",
+    "gender": "female",
     "age": 38,
     "city": "Mumbai",
     "occupation": "Marketing Manager",
@@ -74,6 +76,7 @@
   {
     "customer_id": "C003",
     "name": "Rohan Mehta",
+    "gender": "male" ,
     "age": 31,
     "city": "Delhi",
     "occupation": "Founder",
