@@ -21,6 +21,98 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown("""
+<style>
+.block-container {
+    padding-top: 2rem;
+    max-width: 1400px;
+}
+
+.premium-card {
+    background: #ffffff;
+    border: 1px solid #E5E7EB;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.profile-card {
+    background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+    border: 1px solid #E5E7EB;
+    border-radius: 18px;
+    padding: 26px;
+    margin-bottom: 18px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.avatar-circle {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: #EAF3FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+}
+
+.mini-card {
+    background: #ffffff;
+    border: 1px solid #E5E7EB;
+    border-radius: 16px;
+    padding: 20px 24px;
+    height: 170px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.metric-label {
+    font-size: 14px;
+    color: #475569;
+    font-weight: 600;
+}
+
+.metric-value {
+    font-size: 30px;
+    font-weight: 800;
+    color: #0F172A;
+    margin-top: 8px;
+}
+
+.badge-green {
+    display: inline-block;
+    background: #DCFCE7;
+    color: #15803D;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 8px;
+}
+
+.badge-purple {
+    display: inline-block;
+    background: #F3E8FF;
+    color: #6D28D9;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.badge-amber {
+    display: inline-block;
+    background: #FEF3C7;
+    color: #B45309;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 8px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.title("💰 ArthaMitra")
 st.caption(
     "Your AI Financial Relationship Manager — powered by a Financial Digital Twin")
@@ -579,59 +671,118 @@ st.sidebar.write(
 st.sidebar.write(f"**Life Event:** {twin['life_events']['label']}")
 
 
-col1, col2, col3, col4 = st.columns([1, 1.7, 1.2, 1.2])
+st.markdown("## 👤 Customer Overview")
+st.caption("A quick view of who this customer is, what their goal is, and how their finances look today.")
 
-col1.metric("Health Score", f"{overall_score}/100", health_label)
-with col2:
-    st.markdown(
-        """
-        <div style="
-            font-size:16px;
-            color:#111827;
-            margin-bottom:6px;
-        ">
-            Financial Persona
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+goal_name = customer["investment_goal"].replace("_", " ").title()
 
+with st.container(border=True):
+    profile_avatar, profile_details = st.columns([1, 8])
+
+    with profile_avatar:
+        st.markdown(
+            """
+            <div style="
+                width:82px;
+                height:82px;
+                border-radius:50%;
+                background:#EAF3FF;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:40px;
+                margin-top:8px;
+            ">
+                👨‍💼
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with profile_details:
+        st.markdown(f"## {customer['name']}")
+        st.caption(
+            f"{customer['occupation']} • "
+            f"{customer['city']} • "
+            f"Age {customer['age']}"
+        )
+
+        profile_col, event_col, goal_col = st.columns(3)
+
+        with profile_col:
+            with st.container(border=True):
+                st.caption("Investor Profile")
+                st.markdown(f"**🧑‍💼 {risk_profile}**")
+
+        with event_col:
+            with st.container(border=True):
+                st.caption("Recent Life Event")
+                st.markdown(
+                    f"**📅 {twin['life_events']['label']}**"
+                )
+
+        with goal_col:
+            with st.container(border=True):
+                st.caption("Financial Goal")
+                st.markdown(f"**🎯 {goal_name}**")
+
+k1, k2, k3, k4 = st.columns(4)
+
+with k1:
     st.markdown(
         f"""
-        <div style="
-            background:#E8F8EF;
-            border:1px solid #D0EEDB;
-            border-radius:12px;
-            padding:8px 16px;
-            height:48px;
-            display:flex;
-            align-items:center;
-            gap:14px;
-            white-space:nowrap;
-            margin-top:-2px;
-        ">
-            <span style="font-size:22px;">👤</span>
-            <span style="
-                font-size:19px;
-                font-weight:600;
-                color:#15803D;
-            ">
-                {risk_profile}
-            </span>
+        <div class="mini-card">
+            <div class="metric-label">❤️ Financial Health</div>
+            <div class="metric-value">{overall_score}/100</div>
+            <div class="badge-green">↗ {health_label}</div>
         </div>
         """,
         unsafe_allow_html=True
     )
-col3.metric("Net Worth", format_currency(features["net_worth"]))
-col4.metric("Savings Rate", f"{features['savings_rate']}%")
 
+with k2:
+    st.markdown(
+        f"""
+        <div class="mini-card">
+            <div class="metric-label">💼 Net Worth</div>
+            <div class="metric-value">{format_currency(features["net_worth"])}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with k3:
+    st.markdown(
+        f"""
+        <div class="mini-card">
+            <div class="metric-label">🛡 Emergency Buffer</div>
+            <div class="metric-value">{features['emergency_months']} months</div>
+            <div class="badge-amber">Safety Cushion</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with k4:
+    st.markdown(
+        f"""
+        <div class="mini-card">
+            <div class="metric-label">💰 Savings Rate</div>
+            <div class="metric-value">{features['savings_rate']}%</div>
+            <div class="badge-green">Healthy</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 st.divider()
 
 left, right = st.columns([1.2, 1])
 
 with left:
-    st.subheader("Financial Snapshot")
+    st.subheader("💰 Current Financial Position")
+    st.caption(
+        "A snapshot of income, expenses, savings, investments, and available cash flow today.")
 
     snapshot_df = pd.DataFrame({
         "Metric": [
@@ -658,7 +809,8 @@ with left:
     st.plotly_chart(fig, use_container_width=True)
 
 with right:
-    st.subheader("Spending Breakdown")
+    st.subheader("🛒 Where Your Money Goes")
+    st.caption("Monthly spending split across major categories.")
 
     txn_df = pd.DataFrame({
         "Category": customer["transactions"].keys(),
@@ -668,10 +820,30 @@ with right:
     fig = px.pie(txn_df, names="Category", values="Amount")
     st.plotly_chart(fig, use_container_width=True)
 
+components = twin["scores"]["components"]
+
+strongest = max(components, key=components.get)
+weakest = min(components, key=components.get)
+
+st.info(
+    f"""
+### Executive Summary
+
+✅ **Strongest Area:** {strongest}
+
+⚠️ **Needs Most Attention:** {weakest}
+
+Overall, your financial health is **{health_label}** with a score of **{overall_score}/100**.
+"""
+)
 
 st.divider()
 
-st.subheader("Financial Health Components")
+st.subheader("❤️ Why Your Financial Health Score Looks Like This")
+st.caption(
+    "Your Financial Health Score is calculated using the eight factors below. "
+    "Improving lower-scoring areas has the greatest impact on your overall financial well-being."
+)
 
 score_df = pd.DataFrame({
     "Component": component_scores.keys(),
@@ -683,7 +855,10 @@ fig = px.bar(score_df, x="Component", y="Score",
 st.plotly_chart(fig, use_container_width=True)
 
 
-st.subheader("Financial Health Radar")
+st.subheader("📊 Financial Strength Map")
+st.caption(
+    "A quick visual summary of your strongest and weakest financial dimensions."
+)
 
 radar_df = pd.DataFrame({
     "Dimension": list(financial_dna.keys()),
@@ -736,91 +911,142 @@ with col_b:
 
 st.divider()
 
-left2, right2 = st.columns(2)
+left2, right2 = st.columns([1, 1.25])
+
+projection = twin["projections"]
+goal_projection = projection["goal_projection"]
+projected_values = projection["projected_values"]
+growth = projection["growth"]
+
+future_goal_value = goal_projection["inflation_adjusted_goal"]
+projected_assets = projected_values["total_projected_assets"]
+projected_net_worth = projected_values["projected_net_worth"]
+goal_funded = goal_projection["goal_covered_percent"]
+still_needed = goal_projection["projected_goal_gap"]
+
+status_label = (
+    "On Track"
+    if goal_funded >= 80
+    else "Needs Attention"
+    if goal_funded >= 50
+    else "Action Recommended"
+)
+
+status_icon = (
+    "🟢"
+    if goal_funded >= 80
+    else "🟡"
+    if goal_funded >= 50
+    else "🔴"
+)
 
 with left2:
-    st.subheader("Current Investment Portfolio")
+    st.subheader("📊 Current Investment Portfolio")
+    st.caption("Your current asset allocation across investment categories.")
 
     portfolio_df = pd.DataFrame({
         "Asset": customer["investments"].keys(),
         "Amount": customer["investments"].values()
     })
 
-    fig = px.pie(portfolio_df, names="Asset", values="Amount")
+    fig = px.pie(
+        portfolio_df,
+        names="Asset",
+        values="Amount",
+        hole=0.45
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-col_title, col_settings = st.columns([5, 2])
+    st.metric(
+        "Total Investments",
+        format_currency(features["investments"])
+    )
 
-with col_title:
-    st.subheader("Long-Term Asset Projection")
+with right2:
+    title_col, assumption_col = st.columns([3, 2])
 
-with col_settings:
-    with st.popover("📈 Assumptions ⚙"):
-        st.caption("Conservative long-term assumptions")
+    with title_col:
+        st.subheader("🚀 Future Financial Outlook")
 
-        st.session_state.projection_assumptions["savings_interest"] = st.slider(
-            "Savings Interest (%)", 0.0, 8.0,
-            st.session_state.projection_assumptions["savings_interest"] * 100,
-            0.5
-        ) / 100
+    with assumption_col:
+        with st.popover("📈 Assumptions ⚙"):
+            st.caption("Conservative long-term assumptions")
 
-        st.session_state.projection_assumptions["mutual_funds_cagr"] = st.slider(
-            "Mutual Fund CAGR (%)", 0.0, 20.0,
-            st.session_state.projection_assumptions["mutual_funds_cagr"] * 100,
-            0.5
-        ) / 100
+            st.session_state.projection_assumptions["savings_interest"] = st.slider(
+                "Savings Interest (%)", 0.0, 8.0,
+                st.session_state.projection_assumptions["savings_interest"] * 100,
+                0.5
+            ) / 100
 
-        st.session_state.projection_assumptions["fixed_deposits_cagr"] = st.slider(
-            "FD Return (%)", 0.0, 12.0,
-            st.session_state.projection_assumptions["fixed_deposits_cagr"] * 100,
-            0.5
-        ) / 100
+            st.session_state.projection_assumptions["mutual_funds_cagr"] = st.slider(
+                "Mutual Fund CAGR (%)", 0.0, 20.0,
+                st.session_state.projection_assumptions["mutual_funds_cagr"] * 100,
+                0.5
+            ) / 100
 
-        st.session_state.projection_assumptions["stocks_cagr"] = st.slider(
-            "Stock CAGR (%)", 0.0, 25.0,
-            st.session_state.projection_assumptions["stocks_cagr"] * 100,
-            0.5
-        ) / 100
+            st.session_state.projection_assumptions["fixed_deposits_cagr"] = st.slider(
+                "FD Return (%)", 0.0, 12.0,
+                st.session_state.projection_assumptions["fixed_deposits_cagr"] * 100,
+                0.5
+            ) / 100
 
-        st.session_state.projection_assumptions["gold_cagr"] = st.slider(
-            "Gold CAGR (%)", 0.0, 15.0,
-            st.session_state.projection_assumptions["gold_cagr"] * 100,
-            0.5
-        ) / 100
+            st.session_state.projection_assumptions["stocks_cagr"] = st.slider(
+                "Stock CAGR (%)", 0.0, 25.0,
+                st.session_state.projection_assumptions["stocks_cagr"] * 100,
+                0.5
+            ) / 100
 
-        st.session_state.projection_assumptions["sip_cagr"] = st.slider(
-            "SIP CAGR (%)", 0.0, 20.0,
-            st.session_state.projection_assumptions["sip_cagr"] * 100,
-            0.5
-        ) / 100
+            st.session_state.projection_assumptions["gold_cagr"] = st.slider(
+                "Gold CAGR (%)", 0.0, 15.0,
+                st.session_state.projection_assumptions["gold_cagr"] * 100,
+                0.5
+            ) / 100
 
-projection = twin["projections"]
-projected_values = projection["projected_values"]
-growth = projection["growth"]
-goal_projection = projection["goal_projection"]
+            st.session_state.projection_assumptions["sip_cagr"] = st.slider(
+                "SIP CAGR (%)", 0.0, 20.0,
+                st.session_state.projection_assumptions["sip_cagr"] * 100,
+                0.5
+            ) / 100
 
-p1, p2, p3, p4 = st.columns(4)
+    st.caption(
+        "Where this customer is heading based on current savings, investments, SIPs and goal timeline."
+    )
 
-p1.metric(
-    f"Projected Assets ({projection['years']} yrs)",
-    format_currency(projected_values["total_projected_assets"]),
-    format_currency(growth["growth_amount"])
-)
+    st.markdown(
+        f"""
+        **Goal:** {customer['investment_goal'].replace('_', ' ').title()}  
+        **Timeline:** {projection['years']} years  
 
-p2.metric(
-    "Projected Net Worth",
-    format_currency(projected_values["projected_net_worth"])
-)
+        This goal comes from the selected customer profile or the Quick Assessment form.
+        """
+    )
 
-p3.metric(
-    "Goal Coverage",
-    f"{goal_projection['goal_covered_percent']}%"
-)
+    a, b = st.columns(2)
 
-p4.metric(
-    "Projected Goal Gap",
-    format_currency(goal_projection["projected_goal_gap"])
-)
+    with a:
+        st.metric("Future Goal Value", format_currency(future_goal_value))
+        st.metric(
+            "Projected Assets",
+            format_currency(projected_assets),
+            format_currency(growth["growth_amount"])
+        )
+        st.metric("Projected Net Worth", format_currency(projected_net_worth))
+
+    with b:
+        st.metric("Goal Funded", f"{goal_funded}%")
+        st.metric("Still Needed", format_currency(still_needed))
+
+        st.markdown("###### Goal Status")
+        st.markdown(f"### {status_icon} {status_label}")
+
+    st.success(
+        f"At the current pace, {customer['name']} is projected to build "
+        f"**{format_currency(projected_assets)}** over the next "
+        f"**{projection['years']} years**, funding about "
+        f"**{goal_funded}%** of the inflation-adjusted goal."
+    )
+
+st.markdown("#### 📈 Projected Asset Growth by Category")
 
 projection_df = pd.DataFrame({
     "Asset": [
@@ -845,21 +1071,10 @@ fig = px.bar(
     projection_df,
     x="Asset",
     y="Projected Value",
-    text="Projected Value",
-    title="Projected Asset Growth by Category"
+    text="Projected Value"
 )
 
 st.plotly_chart(fig, use_container_width=True)
-
-with right2:
-    st.subheader("Prediction Summary")
-
-    st.metric("Goal Status", twin["predictions"]["goal_status"])
-    st.metric("Projected Corpus", format_currency(
-        twin["predictions"]["projected_corpus"]))
-    st.metric("Goal Gap", format_currency(twin["predictions"]["goal_gap"]))
-    st.metric("Financial Stress Risk",
-              twin["predictions"]["financial_stress_risk"])
 
 
 st.divider()

@@ -6,9 +6,10 @@ from services.engines.inflation_engine import run_inflation_engine
 from services.engines.prediction_engine import run_prediction_engine
 from services.engines.recommendation_engine import run_recommendation_engine
 from services.engines.confidence_engine import run_confidence_engine
+from services.engines.projection_engine import run_projection_engine
 
 
-def build_financial_twin(customer):
+def build_financial_twin(customer, projection_assumptions=None):
     twin = {
         "customer": customer,
         "metrics": {},
@@ -18,6 +19,8 @@ def build_financial_twin(customer):
         "life_events": {},
         "future_values": {},
         "predictions": {},
+        "projections": {},
+        "projection_assumptions": projection_assumptions or {},
         "recommendations": [],
         "recommendation_summary": {},
         "confidence": {}
@@ -29,6 +32,7 @@ def build_financial_twin(customer):
         run_behaviour_engine,
         run_life_event_engine,
         run_inflation_engine,
+        run_projection_engine,
         run_prediction_engine,
         run_recommendation_engine,
         run_confidence_engine,
