@@ -1,14 +1,29 @@
 import sys
 import time
 
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import (
+    TimeoutError as PlaywrightTimeoutError,
+    sync_playwright,
+)
 
 
 APP_URL = "https://arthamitra.streamlit.app/"
-APP_TEXT = "ArthaMitra"
+WAKE_BUTTON_TEXT = "Yes, get this app back up!"
+APP_READY_TEXT = "ArthaMitra"
+
+MAX_WAIT_SECONDS = 240
+CHECK_INTERVAL_SECONDS = 5
 
 
-def wake_app() -> None:
+def app_is_ready(page) -> bool:
+    try:
+        body_text = page.locator("body").inner_text(timeout=10_000)
+        return APP_READY_TEXT.lower() in body_text.lower()
+    except PlaywrightTimeoutError:
+        return False
+
+
+def wake_streamlit_app() -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
 
@@ -22,40 +37,55 @@ def wake_app() -> None:
 
         try:
             print(f"Opening {APP_URL}")
-            page.goto(APP_URL, wait_until="domcontentloaded", timeout=120_000)
+
+            page.goto(
+                APP_URL,
+                wait_until="domcontentloaded",
+                timeout=120_000,
+            )
+
             page.wait_for_timeout(5_000)
 
-            wake_button = page.get_by_text(
-                "Yes, get this app back up!",
+            # Case 1: App is already awake.
+            if app_is_ready(page):
+                print("ArthaMitra is already awake.")
+                return
+
+            # Case 2: App is sleeping.
+            wake_button = page.get_by_role(
+                "button",
+                name=WAKE_BUTTON_TEXT,
                 exact=False,
             )
 
             if wake_button.count() > 0 and wake_button.first.is_visible():
                 print("Sleeping app detected. Clicking wake-up button.")
-                wake_button.first.click()
+                wake_button.first.click(timeout=30_000)
             else:
-                print("Wake-up button not found. App may already be running.")
+                print(
+                    "Wake-up button not found. "
+                    "The app may still be loading, so waiting..."
+                )
 
-            # Wait for Streamlit to boot.
-            deadline = time.time() + 180
+            deadline = time.time() + MAX_WAIT_SECONDS
 
             while time.time() < deadline:
-                page.wait_for_timeout(5_000)
+                page.wait_for_timeout(CHECK_INTERVAL_SECONDS * 1000)
 
-                body_text = page.locator("body").inner_text()
-
-                if APP_TEXT.lower() in body_text.lower():
-                    print("ArthaMitra is awake and loaded.")
+                if app_is_ready(page):
+                    print("ArthaMitra is awake and fully loaded.")
                     return
 
-                print("App is still starting...")
+                print("Waiting for ArthaMitra to load...")
 
             raise RuntimeError(
-                "App did not finish loading within three minutes.")
+                f"ArthaMitra did not load within {MAX_WAIT_SECONDS} seconds."
+            )
 
         except PlaywrightTimeoutError as error:
             raise RuntimeError(
-                "Timed out while opening or waking the app.") from error
+                "Timed out while opening or checking ArthaMitra."
+            ) from error
 
         finally:
             browser.close()
@@ -63,7 +93,7 @@ def wake_app() -> None:
 
 if __name__ == "__main__":
     try:
-        wake_app()
+        wake_streamlit_app()
     except Exception as error:
-        print(f"Wake-up failed: {error}", file=sys.stderr)
+        print(f"Wake-up check failed: {error}", file=sys.stderr)
         sys.exit(1)
