@@ -1,25 +1,34 @@
 import sys
 import time
 
-from playwright.sync_api import (
-    TimeoutError as PlaywrightTimeoutError,
-    sync_playwright,
-)
+from playwright.sync_api import sync_playwright
 
 
 APP_URL = "https://arthamitra.streamlit.app/"
+HEALTH_URL = "https://arthamitra.streamlit.app/_stcore/health"
 WAKE_BUTTON_TEXT = "Yes, get this app back up!"
-APP_READY_TEXT = "ArthaMitra"
 
-MAX_WAIT_SECONDS = 240
-CHECK_INTERVAL_SECONDS = 5
+MAX_WAIT_SECONDS = 300
+CHECK_INTERVAL_SECONDS = 10
 
 
-def app_is_ready(page) -> bool:
+def backend_is_healthy(page) -> bool:
     try:
-        body_text = page.locator("body").inner_text(timeout=10_000)
-        return APP_READY_TEXT.lower() in body_text.lower()
-    except PlaywrightTimeoutError:
+        response = page.request.get(
+            HEALTH_URL,
+            timeout=20_000,
+            fail_on_status_code=False,
+        )
+
+        print(
+            f"Health check: status={response.status}, "
+            f"body={response.text()[:100]!r}"
+        )
+
+        return response.status == 200
+
+    except Exception as error:
+        print(f"Health check request failed: {error}")
         return False
 
 
@@ -28,11 +37,7 @@ def wake_streamlit_app() -> None:
         browser = playwright.chromium.launch(headless=True)
 
         page = browser.new_page(
-            viewport={"width": 1440, "height": 900},
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 Chrome/130 Safari/537.36"
-            ),
+            viewport={"width": 1440, "height": 900}
         )
 
         try:
@@ -46,46 +51,50 @@ def wake_streamlit_app() -> None:
 
             page.wait_for_timeout(5_000)
 
-            # Case 1: App is already awake.
-            if app_is_ready(page):
-                print("ArthaMitra is already awake.")
+            # Case 1: Backend is already running.
+            if backend_is_healthy(page):
+                print("ArthaMitra is already awake and healthy.")
                 return
 
-            # Case 2: App is sleeping.
+            # Case 2: App is sleeping, so click the wake button.
             wake_button = page.get_by_role(
                 "button",
                 name=WAKE_BUTTON_TEXT,
-                exact=False,
+                exact=True,
             )
 
             if wake_button.count() > 0 and wake_button.first.is_visible():
                 print("Sleeping app detected. Clicking wake-up button.")
+
                 wake_button.first.click(timeout=30_000)
+
             else:
                 print(
-                    "Wake-up button not found. "
-                    "The app may still be loading, so waiting..."
+                    "Wake button not visible. "
+                    "The app may already be booting."
                 )
 
+            # Wait until the Streamlit backend becomes healthy.
             deadline = time.time() + MAX_WAIT_SECONDS
 
             while time.time() < deadline:
-                page.wait_for_timeout(CHECK_INTERVAL_SECONDS * 1000)
-
-                if app_is_ready(page):
-                    print("ArthaMitra is awake and fully loaded.")
+                if backend_is_healthy(page):
+                    print("ArthaMitra is awake and healthy.")
                     return
 
-                print("Waiting for ArthaMitra to load...")
+                print(
+                    f"Backend not ready. Retrying in "
+                    f"{CHECK_INTERVAL_SECONDS} seconds..."
+                )
+
+                page.wait_for_timeout(
+                    CHECK_INTERVAL_SECONDS * 1000
+                )
 
             raise RuntimeError(
-                f"ArthaMitra did not load within {MAX_WAIT_SECONDS} seconds."
+                f"ArthaMitra did not become healthy within "
+                f"{MAX_WAIT_SECONDS} seconds."
             )
-
-        except PlaywrightTimeoutError as error:
-            raise RuntimeError(
-                "Timed out while opening or checking ArthaMitra."
-            ) from error
 
         finally:
             browser.close()
@@ -94,6 +103,7 @@ def wake_streamlit_app() -> None:
 if __name__ == "__main__":
     try:
         wake_streamlit_app()
+
     except Exception as error:
-        print(f"Wake-up check failed: {error}", file=sys.stderr)
+        print(f"Wake-up failed: {error}", file=sys.stderr)
         sys.exit(1)
